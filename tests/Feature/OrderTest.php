@@ -223,7 +223,7 @@ class OrderTest extends TestCase
         $order = Order::factory()->create(['status' => OrderStatus::Diterima]);
 
         $this->actingAs($this->kasir())
-            ->put(route('orders.status', $order), ['status' => OrderStatus::Disetrika->value])
+            ->put(route('orders.status', $order), ['status' => OrderStatus::Selesai->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(OrderStatus::Diterima, $order->fresh()->status);
@@ -241,27 +241,27 @@ class OrderTest extends TestCase
         ]);
 
         $this->actingAs($kasir)
-            ->put(route('orders.status', $order), ['status' => OrderStatus::Dicuci->value])
+            ->put(route('orders.status', $order), ['status' => OrderStatus::Diproses->value])
             ->assertRedirect(route('orders.show', $order));
 
-        $this->assertSame(OrderStatus::Dicuci, $order->fresh()->status);
+        $this->assertSame(OrderStatus::Diproses, $order->fresh()->status);
         $this->assertDatabaseHas('order_status_logs', [
             'order_id' => $order->id,
             'status_lama' => 'diterima',
-            'status_baru' => 'dicuci',
+            'status_baru' => 'diproses',
         ]);
         $this->assertSame(2, $order->statusLogs()->count());
     }
 
-    public function test_pesanan_diambil_tidak_bisa_diubah_statusnya(): void
+    public function test_pesanan_selesai_tidak_bisa_diubah_statusnya(): void
     {
-        $order = Order::factory()->create(['status' => OrderStatus::Diambil]);
+        $order = Order::factory()->create(['status' => OrderStatus::Selesai]);
 
         $this->actingAs($this->admin())
             ->put(route('orders.status', $order), ['status' => OrderStatus::Dibatalkan->value])
             ->assertSessionHasErrors('status');
 
-        $this->assertSame(OrderStatus::Diambil, $order->fresh()->status);
+        $this->assertSame(OrderStatus::Selesai, $order->fresh()->status);
     }
 
     public function test_kasir_tidak_boleh_membatalkan_pesanan(): void
@@ -275,9 +275,9 @@ class OrderTest extends TestCase
         $this->assertSame(OrderStatus::Diterima, $order->fresh()->status);
     }
 
-    public function test_admin_boleh_membatalkan_pesanan_dari_status_dicuci(): void
+    public function test_admin_boleh_membatalkan_pesanan_dari_status_diproses(): void
     {
-        $order = Order::factory()->create(['status' => OrderStatus::Dicuci]);
+        $order = Order::factory()->create(['status' => OrderStatus::Diproses]);
         $admin = $this->admin();
 
         $this->actingAs($admin)
@@ -287,23 +287,23 @@ class OrderTest extends TestCase
         $this->assertSame(OrderStatus::Dibatalkan, $order->fresh()->status);
         $this->assertDatabaseHas('order_status_logs', [
             'order_id' => $order->id,
-            'status_lama' => 'dicuci',
+            'status_lama' => 'diproses',
             'status_baru' => 'dibatalkan',
         ]);
     }
 
     public function test_index_hanya_menampilkan_status_yang_difilter(): void
     {
-        Order::factory()->create(['status' => OrderStatus::Dicuci]);
+        Order::factory()->create(['status' => OrderStatus::Diproses]);
         Order::factory()->create(['status' => OrderStatus::Diterima]);
 
         $response = $this->actingAs($this->kasir())
-            ->get(route('orders.index', ['status' => 'dicuci']));
+            ->get(route('orders.index', ['status' => 'diproses']));
 
         $response->assertOk();
         $response->assertSee('LDR-', false);
 
-        $this->assertSame(1, Order::query()->where('status', 'dicuci')->count());
+        $this->assertSame(1, Order::query()->where('status', 'diproses')->count());
     }
 
     public function test_halaman_pesanan_butuh_login(): void
@@ -325,15 +325,15 @@ class OrderTest extends TestCase
 
         $response->assertOk();
         // Tombol langsung menyebut status tujuan.
-        $response->assertSee('Proses ke Dicuci', false);
+        $response->assertSee('Proses ke Diproses', false);
         // Tidak ada lagi dropdown status yang hanya berisi satu opsi.
         $response->assertDontSee('<select id="status"', false);
-        $response->assertSee('<input type="hidden" name="status" value="dicuci">', false);
+        $response->assertSee('<input type="hidden" name="status" value="diproses">', false);
     }
 
     public function test_status_final_tidak_menampilkan_tombol_status(): void
     {
-        $order = Order::factory()->create(['status' => OrderStatus::Diambil]);
+        $order = Order::factory()->create(['status' => OrderStatus::Selesai]);
 
         $response = $this->actingAs($this->kasir())->get(route('orders.show', $order));
 
@@ -348,7 +348,7 @@ class OrderTest extends TestCase
         $order = Order::factory()->create(['status' => OrderStatus::Diterima]);
 
         $this->actingAs($this->kasir())
-            ->put(route('orders.status', $order), ['status' => OrderStatus::Diambil->value])
+            ->put(route('orders.status', $order), ['status' => OrderStatus::Selesai->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(OrderStatus::Diterima, $order->fresh()->status);

@@ -140,11 +140,12 @@ class Fase0Test extends TestCase
 
     public function test_order_status_only_moves_forward(): void
     {
-        $this->assertTrue(OrderStatus::Diterima->bolehPindahKe(OrderStatus::Dicuci));
-        $this->assertFalse(OrderStatus::Diterima->bolehPindahKe(OrderStatus::Disetrika));
-        $this->assertFalse(OrderStatus::Diambil->bolehPindahKe(OrderStatus::Dicuci));
-        $this->assertTrue(OrderStatus::Diambil->sudahFinal());
-        $this->assertSame(OrderStatus::Dicuci, OrderStatus::Diterima->berikutnya());
+        $this->assertTrue(OrderStatus::Diterima->bolehPindahKe(OrderStatus::Diproses));
+        $this->assertFalse(OrderStatus::Diterima->bolehPindahKe(OrderStatus::Selesai));
+        $this->assertFalse(OrderStatus::Selesai->bolehPindahKe(OrderStatus::Diproses));
+        $this->assertTrue(OrderStatus::Selesai->sudahFinal());
+        $this->assertSame(OrderStatus::Diproses, OrderStatus::Diterima->berikutnya());
+        $this->assertSame([OrderStatus::Diterima, OrderStatus::Diproses, OrderStatus::Selesai], OrderStatus::urutan());
     }
 
     public function test_stats_api_returns_expected_keys(): void

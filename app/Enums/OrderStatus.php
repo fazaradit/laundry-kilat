@@ -2,13 +2,20 @@
 
 namespace App\Enums;
 
+/**
+ * Alur status pesanan.
+ *
+ * Tiga tahap generik: diterima -> diproses -> selesai.
+ * Tahap operasional seperti dicuci atau disetrika sengaja tidak dijadikan
+ * status, karena tidak semua layanan melewatinya. Cuci Sepatu tidak pernah
+ * disetrika, dan layanan Setrika tidak pernah dicuci. Status generik lebih
+ * jujur daripada memaksa tahap yang tidak relevan.
+ */
 enum OrderStatus: string
 {
     case Diterima = 'diterima';
-    case Dicuci = 'dicuci';
-    case Disetrika = 'disetrika';
-    case SiapDiambil = 'siap_diambil';
-    case Diambil = 'diambil';
+    case Diproses = 'diproses';
+    case Selesai = 'selesai';
     case Dibatalkan = 'dibatalkan';
 
     /**
@@ -18,10 +25,8 @@ enum OrderStatus: string
     {
         return match ($this) {
             self::Diterima => 'Diterima',
-            self::Dicuci => 'Dicuci',
-            self::Disetrika => 'Disetrika',
-            self::SiapDiambil => 'Siap Diambil',
-            self::Diambil => 'Diambil',
+            self::Diproses => 'Diproses',
+            self::Selesai => 'Selesai',
             self::Dibatalkan => 'Dibatalkan',
         };
     }
@@ -29,14 +34,14 @@ enum OrderStatus: string
     /**
      * Class badge yang dipakai di tampilan. Hanya 4 makna:
      * netral (baru diterima), progres (sedang dikerjakan),
-     * sukses (selesai / siap), bahaya (dibatalkan).
+     * sukses (selesai), bahaya (dibatalkan).
      */
     public function badgeClass(): string
     {
         return match ($this) {
             self::Diterima => 'badge-neutral',
-            self::Dicuci, self::Disetrika => 'badge-progress',
-            self::SiapDiambil, self::Diambil => 'badge-success',
+            self::Diproses => 'badge-progress',
+            self::Selesai => 'badge-success',
             self::Dibatalkan => 'badge-danger',
         };
     }
@@ -48,12 +53,12 @@ enum OrderStatus: string
      */
     public static function urutan(): array
     {
-        return [self::Diterima, self::Dicuci, self::Disetrika, self::SiapDiambil, self::Diambil];
+        return [self::Diterima, self::Diproses, self::Selesai];
     }
 
     /**
      * Status berikutnya yang sah menurut state machine.
-     * Status akhir (diambil / dibatalkan) tidak punya kelanjutan.
+     * Status akhir (selesai / dibatalkan) tidak punya kelanjutan.
      */
     public function berikutnya(): ?self
     {
@@ -69,7 +74,7 @@ enum OrderStatus: string
 
     /**
      * Daftar status yang boleh dipilih dari status saat ini.
-     * Selain status berikutnya, Admin boleh membatalkan dari diterima/dicuci
+     * Selain status berikutnya, Admin boleh membatalkan dari diterima/diproses
      * (aturan BR-05); pembatasan role dilakukan di controller.
      *
      * @return array<int, self>
@@ -91,12 +96,12 @@ enum OrderStatus: string
 
     public function bolehDibatalkan(): bool
     {
-        return $this === self::Diterima || $this === self::Dicuci;
+        return $this === self::Diterima || $this === self::Diproses;
     }
 
     public function sudahFinal(): bool
     {
-        return $this === self::Diambil || $this === self::Dibatalkan;
+        return $this === self::Selesai || $this === self::Dibatalkan;
     }
 
     /**
@@ -108,7 +113,7 @@ enum OrderStatus: string
     }
 
     /**
-     * Status yang dianggap masih aktif dikerjakan.
+     * Status yang dianggap masih aktif dikerjakan (belum selesai / batal).
      *
      * @return array<int, string>
      */
@@ -116,9 +121,7 @@ enum OrderStatus: string
     {
         return [
             self::Diterima->value,
-            self::Dicuci->value,
-            self::Disetrika->value,
-            self::SiapDiambil->value,
+            self::Diproses->value,
         ];
     }
 }

@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * Data demo pesanan.
  *
  * Aturan konsistensi yang dijaga (PRD 14, risiko "seeder order tidak konsisten"):
- * - Pesanan berstatus diambil SELALU lunas.
+ * - Pesanan berstatus selesai SELALU lunas.
  * - Pesanan berstatus diterima sebagian besar belum bayar, satu berstatus DP.
  * - Pesanan yang dibatalkan tidak punya pembayaran.
  */
@@ -35,15 +35,15 @@ class OrderSeeder extends Seeder
         // [status, hari lalu, item (nama layanan => qty), diskon, pembayaran]
         // pembayaran: null = belum bayar, 'lunas' = bayar penuh, angka = nominal DP
         $rencana = [
-            [OrderStatus::Diambil, 6, ['Cuci Kering' => 3.5, 'Setrika' => 3.5], 2000, 'lunas'],
-            [OrderStatus::Diambil, 5, ['Cuci Setrika' => 4], 0, 'lunas'],
-            [OrderStatus::Diambil, 5, ['Cuci Sepatu' => 2], 0, 'lunas'],
-            [OrderStatus::SiapDiambil, 3, ['Cuci Kering' => 5], 0, 'lunas'],
-            [OrderStatus::SiapDiambil, 2, ['Bed Cover' => 1, 'Setrika' => 2], 0, 15000],
-            [OrderStatus::Disetrika, 2, ['Cuci Setrika' => 6], 5000, 20000],
-            [OrderStatus::Disetrika, 1, ['Cuci Kering' => 4, 'Setrika' => 4], 0, null],
-            [OrderStatus::Dicuci, 1, ['Cuci Kering' => 2.5], 0, null],
-            [OrderStatus::Dicuci, 1, ['Cuci Sepatu' => 1], 0, 10000],
+            [OrderStatus::Selesai, 6, ['Cuci Kering' => 3.5, 'Setrika' => 3.5], 2000, 'lunas'],
+            [OrderStatus::Selesai, 5, ['Cuci Setrika' => 4], 0, 'lunas'],
+            [OrderStatus::Selesai, 5, ['Cuci Sepatu' => 2], 0, 'lunas'],
+            [OrderStatus::Selesai, 3, ['Cuci Kering' => 5], 0, 'lunas'],
+            [OrderStatus::Selesai, 2, ['Bed Cover' => 1, 'Setrika' => 2], 0, 15000],
+            [OrderStatus::Diproses, 2, ['Cuci Setrika' => 6], 5000, 20000],
+            [OrderStatus::Diproses, 1, ['Cuci Kering' => 4, 'Setrika' => 4], 0, null],
+            [OrderStatus::Diproses, 1, ['Cuci Kering' => 2.5], 0, null],
+            [OrderStatus::Diproses, 1, ['Cuci Sepatu' => 1], 0, 10000],
             [OrderStatus::Diterima, 0, ['Cuci Setrika' => 3], 0, null],
             [OrderStatus::Diterima, 0, ['Cuci Kering' => 2, 'Bed Cover' => 1], 3000, null],
             [OrderStatus::Diterima, 0, ['Setrika' => 2], 0, null],
@@ -54,10 +54,8 @@ class OrderSeeder extends Seeder
 
         $urutanStatus = [
             OrderStatus::Diterima->value,
-            OrderStatus::Dicuci->value,
-            OrderStatus::Disetrika->value,
-            OrderStatus::SiapDiambil->value,
-            OrderStatus::Diambil->value,
+            OrderStatus::Diproses->value,
+            OrderStatus::Selesai->value,
         ];
 
         $nomorHarian = [];
@@ -117,7 +115,7 @@ class OrderSeeder extends Seeder
 
             // Riwayat status mengikuti jalur yang dilalui, bukan lompatan.
             $jalur = $status === OrderStatus::Dibatalkan
-                ? [OrderStatus::Diterima->value, OrderStatus::Dicuci->value, OrderStatus::Dibatalkan->value]
+                ? [OrderStatus::Diterima->value, OrderStatus::Diproses->value, OrderStatus::Dibatalkan->value]
                 : array_slice($urutanStatus, 0, array_search($status->value, $urutanStatus, true) + 1);
 
             $statusLama = '-';

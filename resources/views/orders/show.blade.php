@@ -159,7 +159,7 @@
                     <div class="form-group">
                         <label for="catatan_status">Catatan <span class="muted">(opsional)</span></label>
                         <input type="text" id="catatan_status" name="catatan" value="{{ old('catatan') }}"
-                               maxlength="255" placeholder="Contoh: sudah selesai dicuci">
+                               maxlength="255" placeholder="Contoh: sudah selesai diproses">
                         @error('catatan') <span class="form-error">{{ $message }}</span> @enderror
                     </div>
 
@@ -178,7 +178,7 @@
                         @csrf
                         @method('PUT')
                         <p class="form-hint" style="margin-bottom: 10px;">
-                            Pembatalan hanya bisa dilakukan dari status Diterima atau Dicuci.
+                            Pembatalan hanya bisa dilakukan dari status Diterima atau Diproses.
                         </p>
                         <button type="submit" class="btn btn-danger btn-sm">Batalkan Pesanan</button>
                     </form>
