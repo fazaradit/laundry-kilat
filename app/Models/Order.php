@@ -103,15 +103,34 @@ class Order extends Model
 
     /**
      * Status pelunasan diturunkan, tidak disimpan (PRD 6.4 no. 3).
+     *
+     * Total 0 berarti diskon menutup seluruh tagihan. Tidak ada yang perlu
+     * dibayar, jadi statusnya Lunas, bukan Belum Bayar.
      */
     public function getStatusPelunasanAttribute(): string
     {
+        if ($this->total <= 0) {
+            return 'Lunas';
+        }
+
         $dibayar = $this->dibayar;
 
         return match (true) {
             $dibayar <= 0 => 'Belum Bayar',
             $dibayar < $this->total => 'DP',
             default => 'Lunas',
+        };
+    }
+
+    /**
+     * Class badge untuk status pelunasan.
+     */
+    public function getStatusPelunasanBadgeAttribute(): string
+    {
+        return match ($this->status_pelunasan) {
+            'Lunas' => 'badge-success',
+            'DP' => 'badge-warning',
+            default => 'badge-neutral',
         };
     }
 

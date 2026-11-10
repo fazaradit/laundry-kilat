@@ -217,9 +217,7 @@
             font-size: var(--text-md);
             letter-spacing: -0.01em;
             margin: 28px 0 10px;
-        }
-
-        p.subtitle {
+        }        p.subtitle {
             color: var(--ink-muted);
             margin: 0 0 20px;
             max-width: 65ch;
@@ -489,6 +487,12 @@
             color: var(--danger-ink);
         }
 
+        .badge-warning {
+            background: var(--warning-soft);
+            border-color: var(--warning-border);
+            color: var(--warning-ink);
+        }
+
         /* Nama lama dipertahankan agar view lain tidak pecah */
         .badge-gray   { background: var(--surface-sunken); border-color: var(--border); color: var(--ink-muted); }
         .badge-green  { background: var(--success-soft); border-color: var(--success-border); color: var(--success-ink); }
@@ -550,6 +554,150 @@
         .filter-form .form-group { gap: 2px; }
         .filter-form input, .filter-form select { padding: 7px 10px; font-size: var(--text-sm); }
 
+        /* ---------- Pesanan : form multi item ---------- */
+        .card-title {
+            font-size: var(--text-md);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin: 0 0 14px;
+        }
+
+        .kode-judul {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .link-strong {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .link-strong:hover { text-decoration: underline; }
+
+        .item-rows { display: flex; flex-direction: column; gap: 12px; }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 120px 130px auto;
+            gap: 12px;
+            align-items: end;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .item-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .item-subtotal {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-bottom: 9px;
+        }
+
+        .item-subtotal .label {
+            font-size: var(--text-xs);
+            font-weight: 600;
+            color: var(--ink-muted);
+        }
+
+        .summary {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-width: 420px;
+        }
+
+        .summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-row:last-child { border-bottom: none; }
+        .summary-row > span:first-child { color: var(--ink-muted); font-size: var(--text-sm); }
+
+        .summary-row .input-diskon {
+            width: 140px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--r-control);
+            font-size: var(--text-sm);
+            font-family: inherit;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink);
+            background: var(--surface-raised);
+        }
+
+        .summary-row .input-diskon:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+
+        .summary-total { font-weight: 700; }
+        .summary-total > span:first-child { color: var(--ink); font-size: var(--text-base); }
+        .summary-total > span:last-child { font-size: var(--text-lg); }
+
+        /* ---------- Pesanan : halaman detail ---------- */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .detail-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .detail-row {
+            display: flex;
+            gap: 12px;
+            font-size: var(--text-base);
+        }
+
+        .detail-row .label {
+            flex: 0 0 72px;
+            color: var(--ink-muted);
+            font-size: var(--text-sm);
+        }
+
+        .timeline {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 16px;
+            border-left: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .timeline li { position: relative; }
+
+        .timeline li::before {
+            content: "";
+            position: absolute;
+            left: -21px;
+            top: 5px;
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+
+        .timeline-title { font-weight: 600; font-size: var(--text-base); }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 18px 0;
+        }
+
         /* ---------- Halaman login ---------- */
         .login-wrap {
             display: flex;
@@ -604,6 +752,12 @@
             .card { padding: 16px; }
             table { font-size: var(--text-sm); }
             th, td { padding: 8px 10px; }
+
+            .item-row { grid-template-columns: 1fr 1fr; }
+            .item-row .item-subtotal { grid-column: 1 / 2; padding-bottom: 0; }
+            .item-row .hapus-baris { grid-column: 2 / 3; justify-self: end; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .summary { max-width: none; }
         }
     </style>
 </head>
@@ -619,5 +773,7 @@
 
         @yield('content')
     </main>
+
+    @stack('scripts')
 </body>
 </html>

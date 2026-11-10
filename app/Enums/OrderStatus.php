@@ -27,6 +27,21 @@ enum OrderStatus: string
     }
 
     /**
+     * Class badge yang dipakai di tampilan. Hanya 4 makna:
+     * netral (baru diterima), progres (sedang dikerjakan),
+     * sukses (selesai / siap), bahaya (dibatalkan).
+     */
+    public function badgeClass(): string
+    {
+        return match ($this) {
+            self::Diterima => 'badge-neutral',
+            self::Dicuci, self::Disetrika => 'badge-progress',
+            self::SiapDiambil, self::Diambil => 'badge-success',
+            self::Dibatalkan => 'badge-danger',
+        };
+    }
+
+    /**
      * Urutan alur operasional normal (dipakai untuk menentukan transisi sah).
      *
      * @return array<int, self>
