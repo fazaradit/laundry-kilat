@@ -316,4 +316,41 @@ class OrderTest extends TestCase
     {
         $this->actingAs($this->kasir())->get('/services')->assertForbidden();
     }
+
+    public function test_tombol_status_menyebut_tujuan_tanpa_dropdown(): void
+    {
+        $order = Order::factory()->create(['status' => OrderStatus::Diterima]);
+
+        $response = $this->actingAs($this->kasir())->get(route('orders.show', $order));
+
+        $response->assertOk();
+        // Tombol langsung menyebut status tujuan.
+        $response->assertSee('Proses ke Dicuci', false);
+        // Tidak ada lagi dropdown status yang hanya berisi satu opsi.
+        $response->assertDontSee('<select id="status"', false);
+        $response->assertSee('<input type="hidden" name="status" value="dicuci">', false);
+    }
+
+    public function test_status_final_tidak_menampilkan_tombol_status(): void
+    {
+        $order = Order::factory()->create(['status' => OrderStatus::Diambil]);
+
+        $response = $this->actingAs($this->kasir())->get(route('orders.show', $order));
+
+        $response->assertOk();
+        $response->assertDontSee('Proses ke', false);
+        $response->assertSee('sudah final', false);
+    }
+
+    public function test_hidden_input_status_tidak_bisa_dipakai_untuk_meloncat(): void
+    {
+        // Meniru kasir yang mengubah hidden input lewat DevTools.
+        $order = Order::factory()->create(['status' => OrderStatus::Diterima]);
+
+        $this->actingAs($this->kasir())
+            ->put(route('orders.status', $order), ['status' => OrderStatus::Diambil->value])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(OrderStatus::Diterima, $order->fresh()->status);
+    }
 }

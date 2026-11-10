@@ -133,7 +133,10 @@
                 </p>
             @else
                 @php
-                    $transisi = $order->status->transisiYangBoleh();
+                    // State machine hanya mengizinkan satu langkah maju, jadi
+                    // dropdown satu opsi tidak berguna. Tujuan dikirim sebagai
+                    // hidden input dan tetap divalidasi server.
+                    $berikutnya = $order->status->berikutnya();
                     $bolehBatal = auth()->user()->isAdmin() && $order->status->bolehDibatalkan();
                 @endphp
 
@@ -141,19 +144,17 @@
                     @csrf
                     @method('PUT')
 
-                    <div class="form-group">
-                        <label for="status">Status berikutnya</label>
-                        <select id="status" name="status" required>
-                            @foreach ($transisi as $opsi)
-                                @if ($opsi === \App\Enums\OrderStatus::Dibatalkan)
-                                    @continue
-                                @endif
-                                <option value="{{ $opsi->value }}">{{ $opsi->label() }}</option>
-                            @endforeach
-                        </select>
-                        <span class="form-hint">Hanya langkah berikutnya yang sah yang ditampilkan.</span>
-                        @error('status') <span class="form-error">{{ $message }}</span> @enderror
-                    </div>
+                    <input type="hidden" name="status" value="{{ $berikutnya?->value }}">
+
+                    <p class="status-next">
+                        Langkah berikutnya:
+                        <strong>{{ $berikutnya?->label() ?? '-' }}</strong>
+                    </p>
+                    <p class="form-hint" style="margin-bottom: 16px;">
+                        Status hanya bisa maju satu tahap. Tidak bisa mundur atau melompat.
+                    </p>
+
+                    @error('status') <span class="form-error">{{ $message }}</span> @enderror
 
                     <div class="form-group">
                         <label for="catatan_status">Catatan <span class="muted">(opsional)</span></label>
@@ -163,7 +164,9 @@
                     </div>
 
                     <div class="form-footer">
-                        <button type="submit" class="btn">Simpan Status</button>
+                        <button type="submit" class="btn">
+                            Proses ke {{ $berikutnya?->label() ?? 'tahap berikutnya' }}
+                        </button>
                     </div>
                 </form>
 

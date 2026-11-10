@@ -692,6 +692,17 @@
 
         .timeline-title { font-weight: 600; font-size: var(--text-base); }
 
+        .status-next {
+            margin: 0;
+            font-size: var(--text-base);
+            color: var(--ink-muted);
+        }
+
+        .status-next strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
         .divider {
             border: none;
             border-top: 1px solid var(--border);
