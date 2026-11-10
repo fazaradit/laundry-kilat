@@ -4,33 +4,41 @@
 
 @section('content')
     <h1>Dashboard</h1>
-    <p class="subtitle">Ringkasan operasional laundry, diambil dari <code>GET /api/stats</code>.</p>
+    <p class="subtitle">Ringkasan operasional hari ini, diambil dari <code>GET /api/stats</code>.</p>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="value">{{ number_format($stats['pesanan_hari_ini'], 0, ',', '.') }}</div>
-            <div class="label">Pesanan Hari Ini</div>
-        </div>
-        <div class="stat-card">
-            <div class="value">{{ number_format($stats['pesanan_aktif'], 0, ',', '.') }}</div>
-            <div class="label">Pesanan Aktif</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" style="font-size: 26px;">
-                Rp {{ number_format($stats['pendapatan_hari_ini'], 0, ',', '.') }}
+    <div class="overview">
+        <div class="overview-primary">
+            <div>
+                <div class="label">Pendapatan hari ini</div>
+                <div class="stat-value" style="margin-top: 10px;">
+                    Rp {{ number_format($stats['pendapatan_hari_ini'], 0, ',', '.') }}
+                </div>
             </div>
-            <div class="label">Pendapatan Hari Ini</div>
+            <div class="note">
+                Dihitung dari pembayaran yang tercatat sejak pukul 00.00 hari ini.
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="value">{{ number_format($stats['total_pelanggan'] ?? 0, 0, ',', '.') }}</div>
-            <div class="label">Total Pelanggan</div>
+
+        <div class="metric-list">
+            <div class="metric-row">
+                <span class="label">Pesanan hari ini</span>
+                <span class="stat-value">{{ number_format($stats['pesanan_hari_ini'], 0, ',', '.') }}</span>
+            </div>
+            <div class="metric-row">
+                <span class="label">Pesanan aktif</span>
+                <span class="stat-value">{{ number_format($stats['pesanan_aktif'], 0, ',', '.') }}</span>
+            </div>
+            <div class="metric-row">
+                <span class="label">Total pelanggan</span>
+                <span class="stat-value">{{ number_format($stats['total_pelanggan'] ?? 0, 0, ',', '.') }}</span>
+            </div>
         </div>
     </div>
 
-    <p style="margin-top: 24px;">
-        <a href="{{ route('customers.index') }}" class="btn">Kelola Pelanggan</a>
+    <div class="page-actions">
+        <a href="{{ route('customers.index') }}" class="btn">Kelola pelanggan</a>
         @if (auth()->user()->isAdmin())
-            <a href="{{ route('services.index') }}" class="btn btn-outline">Kelola Layanan</a>
+            <a href="{{ route('services.index') }}" class="btn btn-secondary">Kelola layanan</a>
         @endif
-    </p>
+    </div>
 @endsection

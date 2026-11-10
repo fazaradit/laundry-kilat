@@ -1,5 +1,5 @@
 <nav>
-    <div class="brand">🧺 Laundry Kilat</div>
+    <a href="{{ route('dashboard') }}" class="brand">Laundry Kilat</a>
 
     @auth
         <ul>
@@ -23,10 +23,12 @@
                 <li>
                     <a href="{{ route('orders.report') }}" class="{{ request()->routeIs('orders.report') ? 'active' : '' }}">Laporan</a>
                 </li>
-            @endif        </ul>
+            @endif
+        </ul>
 
         <div class="navbar-user">
-            <span>{{ auth()->user()->name }} ({{ ucfirst(auth()->user()->role) }})</span>
+            <span class="user-name">{{ auth()->user()->name }}</span>
+            <span class="role-chip">{{ auth()->user()->role }}</span>
             <form action="{{ route('logout') }}" method="POST" class="inline">
                 @csrf
                 <button type="submit" class="btn-logout">Logout</button>
@@ -35,6 +37,6 @@
     @endauth
 
     @guest
-        <a href="{{ route('login') }}" class="login-link {{ request()->routeIs('login') ? 'active' : '' }}">Login</a>
+        <a href="{{ route('login') }}" class="login-link {{ request()->routeIs('login') ? 'active' : '' }}">Masuk</a>
     @endguest
 </nav>

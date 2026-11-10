@@ -38,10 +38,10 @@
                 <tr>
                     <th>Nama Layanan</th>
                     <th>Satuan</th>
-                    <th>Harga</th>
-                    <th>Estimasi</th>
+                    <th class="num" style="text-align: right;">Harga</th>
+                    <th class="num" style="text-align: right;">Estimasi</th>
                     <th>Status</th>
-                    <th>Dipakai</th>
+                    <th class="num" style="text-align: right;">Dipakai</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -50,14 +50,14 @@
                     <tr>
                         <td>{{ $service->nama_layanan }}</td>
                         <td>{{ $service->satuan }}</td>
-                        <td>Rp {{ number_format($service->harga, 0, ',', '.') }} / {{ $service->satuan }}</td>
-                        <td>{{ $service->estimasi_hari }} hari</td>
+                        <td class="num" style="text-align: right;">Rp {{ number_format($service->harga, 0, ',', '.') }}</td>
+                        <td class="num" style="text-align: right;">{{ $service->estimasi_hari }} hari</td>
                         <td>
-                            <span class="badge {{ $service->isAktif() ? 'badge-green' : 'badge-gray' }}">
+                            <span class="badge {{ $service->isAktif() ? 'badge-success' : 'badge-neutral' }}">
                                 {{ ucfirst($service->status) }}
                             </span>
                         </td>
-                        <td>{{ $service->order_items_count }}×</td>
+                        <td class="num" style="text-align: right;">{{ $service->order_items_count }}</td>
                         <td>
                             <div class="actions">
                                 <a href="{{ route('services.edit', $service) }}" class="btn btn-outline btn-sm">Edit</a>

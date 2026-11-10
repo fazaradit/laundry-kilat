@@ -5,7 +5,7 @@
 @section('content')
     <h1>Edit Layanan</h1>
     <p class="subtitle">
-        Mengubah harga tidak mengubah struk pesanan lama — harga di pesanan tersimpan sebagai snapshot.
+        Mengubah harga tidak mengubah struk pesanan lama. Harga pada pesanan tersimpan sebagai snapshot.
     </p>
 
     <div class="card">

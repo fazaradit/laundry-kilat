@@ -31,7 +31,7 @@
                     <th>Nama</th>
                     <th>Nomor Telepon</th>
                     <th>Alamat</th>
-                    <th>Pesanan</th>
+                    <th class="num" style="text-align: right;">Pesanan</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -40,8 +40,8 @@
                     <tr>
                         <td>{{ $customer->nama }}</td>
                         <td>{{ $customer->nomor_telepon }}</td>
-                        <td>{{ $customer->alamat ?: '—' }}</td>
-                        <td>{{ $customer->orders_count }}</td>
+                        <td>{{ $customer->alamat ?: '-' }}</td>
+                        <td class="num" style="text-align: right;">{{ $customer->orders_count }}</td>
                         <td>
                             <div class="actions">
                                 <a href="{{ route('customers.edit', $customer) }}" class="btn btn-outline btn-sm">Edit</a>

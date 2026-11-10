@@ -8,7 +8,7 @@
 
 @if ($errors->any())
     <div class="alert alert-error">
-        <strong>Periksa kembali data yang diisi:</strong>
+        <strong>Periksa kembali data yang diisi.</strong>
         <ul>
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
