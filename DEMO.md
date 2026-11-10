@@ -362,9 +362,13 @@ error 500. Nyalakan lagi server tersebut setelah selesai.
 
 ### Langkah 13 - Demo API di Postman
 
-Buka Postman dan siapkan request berikut. Header `Accept: application/json` wajib diisi.
+Buka Postman dan siapkan request berikut. Header `Accept: application/json` wajib diisi, kalau tidak
+Laravel membalas HTML dan validasi gagal berubah jadi `302`, bukan `422`.
 
-**A. `GET http://127.0.0.1:8011/api/services`**
+> Semua contoh memakai port `8000` karena API tersedia di server utama. `8011` hanya khusus panggilan
+> internal Dashboard dan Laporan.
+
+**A. `GET http://127.0.0.1:8000/api/services`**
 
 Tunjukkan:
 
@@ -376,7 +380,7 @@ Tunjukkan:
 **Yang dijelaskan:** bentuk response diatur `ServiceResource`, bukan `response()->json($service)` mentah.
 Resource menyeragamkan format dan hanya mengirim kolom yang boleh dilihat klien.
 
-**B. `GET http://127.0.0.1:8011/api/orders`**
+**B. `GET http://127.0.0.1:8000/api/orders`**
 
 Tunjukkan:
 
@@ -395,16 +399,16 @@ Tunjukkan:
 | `?dari=2026-11-10&sampai=2026-11-01` | `422`, karena rentang terbalik |
 | `?per_page=5` | 5 baris per halaman, `meta.total_nilai` tetap angka periode penuh |
 
-**D. `GET http://127.0.0.1:8011/api/orders/{id}`**
+**D. `GET http://127.0.0.1:8000/api/orders/{id}`**
 
 Ambil id dari response sebelumnya. Tunjukkan detail satu pesanan beserta item dan harga satuannya.
 
-**E. `GET http://127.0.0.1:8011/api/orders/99999`**
+**E. `GET http://127.0.0.1:8000/api/orders/99999`**
 
 Tunjukkan `404` dengan body JSON berisi `message`. Jangan lupa header `Accept: application/json`,
 kalau tidak Laravel membalas halaman HTML.
 
-**F. `GET http://127.0.0.1:8011/api/stats`**
+**F. `GET http://127.0.0.1:8000/api/stats`**
 
 ```json
 {
@@ -418,6 +422,76 @@ kalau tidak Laravel membalas halaman HTML.
 Angka `total_pelanggan` menjadi 13 karena langkah 4 menambah satu pelanggan. Nilai `pesanan_hari_ini`
 dan `pesanan_aktif` berubah setelah langkah 5 sampai 10 dijalankan. Bandingkan angka ini dengan kartu
 di Dashboard untuk membuktikan keduanya membaca sumber yang sama.
+
+**G. `POST http://127.0.0.1:8000/api/orders`**
+
+Body raw JSON:
+
+```json
+{
+    "user_id": 2,
+    "customer_id": 1,
+    "items": [{ "service_id": 1, "qty": 2 }],
+    "catatan": "Dibuat lewat Postman"
+}
+```
+
+Hasilnya `201` dengan `kode_order` baru dan `total` 14000 (2 kg × 7000). **Yang dijelaskan:** body
+tidak berisi `total` maupun `harga_satuan`, tetapi angkanya tetap benar karena dihitung `OrderService`.
+Coba kirim `"total": 1` di body, hasilnya tetap 14000. Ini bukti angka uang tidak pernah dipercaya
+dari klien.
+
+`user_id: 2` adalah kasir. Karena API tidak punya sesi, pelaku dikirim eksplisit. Sebutkan juga
+konsekuensinya: siapa pun yang bisa memanggil API dapat mengaku sebagai user lain, jadi API ini tidak
+untuk dipublikasikan tanpa autentikasi.
+
+**H. `PUT http://127.0.0.1:8000/api/orders/{id}/status`**
+
+Body: `{"user_id": 1, "status": "selesai"}` untuk pesanan baru tadi yang masih `diterima`.
+Hasilnya `422`:
+
+```json
+{
+    "message": "Status tidak boleh berpindah dari Diterima ke Selesai.",
+    "errors": { "status": ["Status tidak boleh berpindah dari Diterima ke Selesai."] }
+}
+```
+
+Ganti jadi `{"user_id": 2, "status": "diproses"}`, hasilnya `200` dan `status` berubah. **Yang
+dijelaskan:** state machine tidak hilang hanya karena pemanggilnya API. Aturan yang sama dipakai form
+web, karena keduanya memanggil `OrderService::ubahStatus()`.
+
+**I. `PUT .../status` dengan pembatalan oleh kasir**
+
+Body: `{"user_id": 2, "status": "dibatalkan"}`. Hasilnya `403`:
+
+```json
+{ "message": "Pembatalan pesanan hanya dapat dilakukan oleh Admin." }
+```
+
+Ganti `user_id` menjadi `1` (admin), hasilnya `200`. Ini pembuktian paling kuat bahwa pembatasan role
+ada di server, bukan di tombol yang disembunyikan.
+
+**J. `POST http://127.0.0.1:8000/api/orders/{id}/payments`**
+
+Body: `{"user_id": 2, "metode": "tunai", "jumlah_bayar": 10000, "uang_diterima": 20000}`.
+Hasilnya `201` dengan `kembalian` 10000 dan `order.sisa_bayar` berkurang.
+
+Lalu ulangi dengan `"jumlah_bayar": 999999`. Hasilnya `422` karena melebihi sisa tagihan.
+**Yang dijelaskan:** `jumlah_bayar` dan `uang_diterima` dua hal berbeda. Yang pertama mengurangi
+tagihan, yang kedua uang fisik. Kembalian dihitung server dari selisihnya.
+
+**K. `DELETE http://127.0.0.1:8000/api/services/{id}`**
+
+Hapus layanan yang baru dibuat di langkah 3 (`Cuci Express`) hanya kalau belum dipakai pesanan,
+hasilnya `200`.
+
+Coba hapus `Cuci Kering` (id `1`). Hasilnya `422` karena layanan itu sudah dipakai puluhan pesanan.
+**Yang dijelaskan:** layanan yang punya riwayat tidak boleh dihapus, harus dinonaktifkan, supaya
+snapshot harga di nota lama tetap utuh. Pesanan sendiri tidak punya endpoint hapus, karena
+`cascadeOnDelete` akan ikut menghapus riwayat pembayaran.
+
+Bentuk request dan response lengkap dari kedelapan endpoint ada di [`API.md`](./API.md).
 
 ### Langkah 14 - Tanya jawab konseptual
 

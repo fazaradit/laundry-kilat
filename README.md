@@ -78,7 +78,7 @@ Buka `http://127.0.0.1:8000`.
 
 > Kalau hanya satu server yang jalan, Dashboard dan Laporan tetap tampil tetapi angkanya nol / tabel kosong (bukan error). Pastikan `INTERNAL_API_URL` di `.env` menunjuk ke port server kedua.
 
-Skenario demo langkah demi langkah, beserta angka yang seharusnya muncul di layar, ada di [`DEMO.md`](./DEMO.md).
+Skenario demo langkah demi langkah, beserta angka yang seharusnya muncul di layar, ada di [`DEMO.md`](./DEMO.md). Dokumentasi REST API lengkap ada di [`API.md`](./API.md).
 
 ---
 
@@ -102,7 +102,7 @@ Perbedaan hak akses:
 
 ## Endpoint API
 
-Base URL: `http://127.0.0.1:8011/api`
+Base URL: `http://127.0.0.1:8000/api`
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
@@ -110,13 +110,22 @@ Base URL: `http://127.0.0.1:8011/api`
 | GET | `/orders` | Daftar pesanan dengan pagination, bisa disaring `?status=&dari=&sampai=&per_page=` |
 | GET | `/orders/{id}` | Detail satu pesanan beserta item |
 | GET | `/stats` | Ringkasan jumlah pesanan & pendapatan hari ini |
+| POST | `/orders` | Buat pesanan baru, butuh `user_id` di body |
+| PUT | `/orders/{order}/status` | Ubah status satu langkah, pembatalan hanya untuk admin |
+| POST | `/orders/{order}/payments` | Catat pembayaran, `kembalian` dihitung server |
+| DELETE | `/services/{service}` | Hapus layanan yang belum pernah dipakai pesanan |
 
 `dari` dan `sampai` memakai format `Y-m-d` dan sama-sama inklusif. Respons `/orders` menyertakan `meta.total_nilai` dan `meta.total_dibayar` yang merupakan agregat seluruh periode filter, bukan hanya halaman yang sedang tampil.
+
+Endpoint tulis tidak memakai token. Pelaku dikirim eksplisit lewat `user_id`, karena route API tidak punya sesi login. Pembatasan role tetap ditegakkan di `OrderService`, jadi kasir yang meminta pembatalan tetap mendapat `403`. Konsekuensinya, API ini tidak boleh diekspos ke internet tanpa autentikasi tambahan.
+
+Detail bentuk request/response tiap endpoint, tabel skenario gagal, dan catatan implementasi ada di [`API.md`](./API.md).
 
 Contoh:
 
 ```bash
-curl "http://127.0.0.1:8011/api/orders?status=diproses&dari=2026-11-01&sampai=2026-11-30&per_page=5"
+curl -H "Accept: application/json" \
+  "http://127.0.0.1:8000/api/orders?status=diproses&dari=2026-11-01&sampai=2026-11-30&per_page=5"
 ```
 
 ---
@@ -129,7 +138,7 @@ curl "http://127.0.0.1:8011/api/orders?status=diproses&dari=2026-11-01&sampai=20
 | **W1** | Migration, model, relasi, auth + middleware, CRUD layanan & pelanggan | ✅ |
 | **W2** | Transaksi pesanan multi-item, perhitungan total, state machine status, `DB::transaction()` | ✅ |
 | **W3** | Pembayaran bertahap + kembalian tunai, struk, REST API, Laporan | ✅ |
-| **W4** | `DEMO.md`, finalisasi dokumentasi, merge `dev` → `main` | ✅ |
+| **W4** | `DEMO.md`, `API.md`, endpoint tulis API, finalisasi dokumentasi, merge `dev` → `main` | ✅ |
 
 ### Pemetaan commit per fase
 
