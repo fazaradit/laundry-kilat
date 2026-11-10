@@ -93,8 +93,11 @@
             font-feature-settings: "tnum";
         }
 
-        /* ---------- Navbar : satu baris, tinggi 56px ---------- */
-        nav {
+        /* ---------- Navbar : satu baris, tinggi 56px ----------
+           Di-scope ke .appbar, BUKAN selector nav global.
+           Elemen <nav> lain di halaman ini (misalnya .pagination) tidak
+           boleh mewarisi latar gelap navbar. */
+        .appbar {
             background: var(--chrome);
             color: var(--chrome-ink);
             padding: 0 24px;
@@ -104,7 +107,7 @@
             min-height: 56px;
         }
 
-        nav .brand {
+        .appbar .brand {
             font-weight: 700;
             font-size: var(--text-md);
             letter-spacing: -0.01em;
@@ -114,7 +117,7 @@
             text-decoration: none;
         }
 
-        nav ul {
+        .appbar ul {
             list-style: none;
             display: flex;
             gap: 2px;
@@ -124,7 +127,7 @@
             min-width: 0;
         }
 
-        nav ul li a {
+        .appbar ul li a {
             color: var(--chrome-ink-muted);
             text-decoration: none;
             padding: 7px 11px;
@@ -136,17 +139,17 @@
             transition: background-color 120ms ease, color 120ms ease;
         }
 
-        nav ul li a:hover {
+        .appbar ul li a:hover {
             background: var(--chrome-hover);
             color: var(--chrome-ink);
         }
 
-        nav ul li a.active {
+        .appbar ul li a.active {
             background: var(--accent);
             color: var(--on-accent);
         }
 
-        nav .navbar-user {
+        .appbar .navbar-user {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -155,12 +158,12 @@
             white-space: nowrap;
         }
 
-        nav .navbar-user .user-name {
+        .appbar .navbar-user .user-name {
             color: var(--chrome-ink);
             font-weight: 500;
         }
 
-        nav .navbar-user .role-chip {
+        .appbar .navbar-user .role-chip {
             display: inline-block;
             padding: 2px 8px;
             border-radius: 999px;
@@ -171,7 +174,7 @@
             color: var(--chrome-ink-muted);
         }
 
-        nav .navbar-user .btn-logout {
+        .appbar .navbar-user .btn-logout {
             background: transparent;
             border: 1px solid var(--chrome-border);
             color: var(--chrome-ink-muted);
@@ -183,13 +186,13 @@
             transition: border-color 120ms ease, color 120ms ease;
         }
 
-        nav .navbar-user .btn-logout:hover {
+        .appbar .navbar-user .btn-logout:hover {
             border-color: var(--danger);
             color: var(--on-accent);
             background: var(--danger);
         }
 
-        nav a.login-link {
+        .appbar a.login-link {
             color: var(--chrome-ink);
             text-decoration: none;
             font-size: var(--text-sm);
@@ -493,26 +496,45 @@
         .badge-red    { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger-ink); }
         .badge-blue   { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
 
-        /* ---------- Pagination ---------- */
+        /* ---------- Pagination ----------
+           .pagination punya latar eksplisit sendiri, terpisah dari .appbar,
+           supaya elemen <nav> di sini tidak pernah tampak seperti navbar. */
         .pagination {
             margin-top: 16px;
             display: flex;
-            gap: 10px;
+            gap: 6px;
             align-items: center;
             flex-wrap: wrap;
             font-size: var(--text-sm);
+            background: transparent;
+            color: var(--ink);
+        }
+
+        .pagination a,
+        .pagination .pagination-current,
+        .pagination .pagination-disabled {
+            padding: 4px 10px;
+            border-radius: var(--r-control);
+            min-width: 30px;
+            text-align: center;
+            text-decoration: none;
         }
 
         .pagination a {
             color: var(--accent);
-            text-decoration: none;
-            padding: 4px 8px;
-            border-radius: var(--r-control);
         }
 
         .pagination a:hover { background: var(--accent-soft); }
-        .pagination .pagination-current { font-weight: 700; color: var(--ink); padding: 4px 8px; }
-        .pagination .pagination-disabled { color: var(--ink-faint); padding: 4px 8px; }
+
+        .pagination .pagination-current {
+            font-weight: 600;
+            color: var(--on-accent);
+            background: var(--accent);
+        }
+
+        .pagination .pagination-disabled {
+            color: var(--ink-faint);
+        }
 
         /* ---------- Toolbar & filter ---------- */
         .toolbar {
@@ -572,8 +594,8 @@
 
         /* ---------- Responsif ---------- */
         @media (max-width: 768px) {
-            nav { padding: 8px 16px; flex-wrap: wrap; gap: 10px; }
-            nav ul { order: 3; width: 100%; flex-wrap: wrap; }
+            .appbar { padding: 8px 16px; flex-wrap: wrap; gap: 10px; }
+            .appbar ul { order: 3; width: 100%; flex-wrap: wrap; }
             main { margin: 20px auto; padding: 0 16px 40px; }
             .overview { grid-template-columns: 1fr; }
             .overview-primary .stat-value { font-size: 32px; }
@@ -586,7 +608,11 @@
     </style>
 </head>
 <body>
-    @include('partials.navbar')
+    {{-- Halaman login punya wordmark sendiri di dalam card, jadi navbar
+         tidak dirender di sana: satu layar, satu fokus. --}}
+    @unless (request()->routeIs('login'))
+        @include('partials.navbar')
+    @endunless
 
     <main>
         @include('partials.alert')

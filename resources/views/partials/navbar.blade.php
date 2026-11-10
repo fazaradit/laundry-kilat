@@ -1,4 +1,4 @@
-<nav>
+<nav class="appbar">
     <a href="{{ route('dashboard') }}" class="brand">Laundry Kilat</a>
 
     @auth

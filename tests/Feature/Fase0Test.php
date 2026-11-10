@@ -158,4 +158,29 @@ class Fase0Test extends TestCase
                 'total_pelanggan',
             ]);
     }
+
+    public function test_authenticated_user_is_redirected_away_from_login(): void
+    {
+        $this->actingAs($this->admin())
+            ->get('/login')
+            ->assertRedirect(route('dashboard'));
+    }
+
+    public function test_login_page_has_no_appbar(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertDontSee('class="appbar"', false);
+    }
+
+    public function test_pagination_nav_does_not_use_appbar_class(): void
+    {
+        Customer::factory()->count(11)->create();
+
+        $response = $this->actingAs($this->admin())->get(route('customers.index'));
+
+        $response->assertOk();
+        $response->assertSee('<nav class="pagination">', false);
+        $response->assertDontSee('<nav class="appbar pagination">', false);
+    }
 }
