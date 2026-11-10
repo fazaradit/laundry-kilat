@@ -16,6 +16,7 @@ class Payment extends Model
         'user_id',
         'metode',
         'jumlah_bayar',
+        'uang_diterima',
         'kembalian',
         'catatan',
         'tanggal_bayar',
@@ -25,6 +26,7 @@ class Payment extends Model
     {
         return [
             'jumlah_bayar' => 'integer',
+            'uang_diterima' => 'integer',
             'kembalian' => 'integer',
             'tanggal_bayar' => 'datetime',
         ];

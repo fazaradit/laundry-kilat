@@ -21,6 +21,7 @@ class PaymentFactory extends Factory
             'user_id' => User::factory(),
             'metode' => 'tunai',
             'jumlah_bayar' => 20000,
+            'uang_diterima' => 20000,
             'kembalian' => 0,
             'catatan' => null,
             'tanggal_bayar' => now(),

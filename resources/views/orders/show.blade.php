@@ -17,6 +17,7 @@
         </div>
 
         <div class="actions">
+            <a href="{{ route('orders.struk', $order) }}" class="btn btn-secondary btn-sm">Struk</a>
             <a href="{{ route('orders.index') }}" class="btn btn-secondary btn-sm">Kembali</a>
         </div>
     </div>
@@ -206,6 +207,7 @@
                         <th>Tanggal</th>
                         <th>Metode</th>
                         <th class="num" style="text-align: right;">Jumlah</th>
+                        <th class="num" style="text-align: right;">Uang Diterima</th>
                         <th class="num" style="text-align: right;">Kembalian</th>
                         <th>Dicatat Oleh</th>
                     </tr>
@@ -216,7 +218,12 @@
                             <td class="nowrap">{{ $payment->tanggal_bayar->format('d M Y H:i') }}</td>
                             <td>{{ ucfirst($payment->metode) }}</td>
                             <td class="num" style="text-align: right;">Rp {{ number_format($payment->jumlah_bayar, 0, ',', '.') }}</td>
-                            <td class="num" style="text-align: right;">Rp {{ number_format($payment->kembalian, 0, ',', '.') }}</td>
+                            <td class="num" style="text-align: right;">
+                                {{ $payment->uang_diterima === null ? '-' : 'Rp '.number_format($payment->uang_diterima, 0, ',', '.') }}
+                            </td>
+                            <td class="num" style="text-align: right;">
+                                {{ $payment->kembalian > 0 ? 'Rp '.number_format($payment->kembalian, 0, ',', '.') : '-' }}
+                            </td>
                             <td class="muted">{{ $payment->user->name }}</td>
                         </tr>
                     @endforeach
@@ -224,8 +231,130 @@
             </table>
         @endif
 
-        <p class="form-hint" style="margin-top: 12px;">
-            Pencatatan pembayaran baru tersedia pada tahap berikutnya.
-        </p>
+        @if ($order->status->value === 'dibatalkan')
+            <p class="form-hint" style="margin-top: 12px;">
+                Pesanan dibatalkan, tidak ada pembayaran yang bisa dicatat.
+            </p>
+        @elseif ($order->sisa_bayar <= 0)
+            <p class="form-hint" style="margin-top: 12px;">
+                Tagihan pesanan ini sudah lunas.
+            </p>
+        @else
+            <hr class="divider">
+
+            <form action="{{ route('orders.payments.store', $order) }}" method="POST" id="form-pembayaran">
+                @csrf
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="metode">Metode</label>
+                        <select id="metode" name="metode" required>
+                            <option value="tunai" @selected(old('metode', 'tunai') === 'tunai')>Tunai</option>
+                            <option value="transfer" @selected(old('metode') === 'transfer')>Transfer</option>
+                            <option value="qris" @selected(old('metode') === 'qris')>QRIS</option>
+                        </select>
+                        @error('metode') <span class="form-error">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jumlah_bayar">Jumlah Bayar</label>
+                        <input type="number" id="jumlah_bayar" name="jumlah_bayar"
+                               value="{{ old('jumlah_bayar', $order->sisa_bayar) }}"
+                               min="1" max="{{ $order->sisa_bayar }}" step="1" required>
+                        <span class="form-hint">
+                            Sisa tagihan Rp {{ number_format($order->sisa_bayar, 0, ',', '.') }}.
+                        </span>
+                        @error('jumlah_bayar') <span class="form-error">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="form-group" id="grup-uang-diterima">
+                        <label for="uang_diterima">Uang Diterima</label>
+                        <input type="number" id="uang_diterima" name="uang_diterima"
+                               value="{{ old('uang_diterima') }}" min="1" step="1">
+                        <span class="form-hint" id="hint-kembalian">Kembalian dihitung otomatis.</span>
+                        @error('uang_diterima') <span class="form-error">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="catatan_bayar">Catatan <span class="muted">(opsional)</span></label>
+                        <input type="text" id="catatan_bayar" name="catatan" value="{{ old('catatan') }}"
+                               maxlength="255" placeholder="Contoh: uang muka">
+                        @error('catatan') <span class="form-error">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <button type="submit" class="btn">Catat Pembayaran</button>
+                </div>
+            </form>
+        @endif
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            var form = document.getElementById('form-pembayaran');
+
+            if (!form) {
+                return;
+            }
+
+            var metode = document.getElementById('metode');
+            var jumlah = document.getElementById('jumlah_bayar');
+            var grupDiterima = document.getElementById('grup-uang-diterima');
+            var diterima = document.getElementById('uang_diterima');
+            var hint = document.getElementById('hint-kembalian');
+
+            function rupiah(nilai) {
+                return 'Rp ' + Math.round(nilai).toLocaleString('id-ID');
+            }
+
+            // Transfer dan QRIS tidak punya uang fisik, jadi kolomnya
+            // disembunyikan dan tidak dikirim supaya server tidak menebak.
+            function sesuaikan() {
+                var tunai = metode.value === 'tunai';
+
+                grupDiterima.style.display = tunai ? '' : 'none';
+                diterima.required = tunai;
+                diterima.disabled = !tunai;
+
+                if (!tunai) {
+                    diterima.value = '';
+                }
+
+                hitungKembalian();
+            }
+
+            function hitungKembalian() {
+                if (!diterima || diterima.disabled) {
+                    return;
+                }
+
+                var bayar = parseFloat(jumlah.value) || 0;
+                var uang = parseFloat(diterima.value) || 0;
+
+                if (uang <= 0) {
+                    hint.textContent = 'Kembalian dihitung otomatis.';
+                    hint.classList.remove('form-error');
+                    return;
+                }
+
+                if (uang < bayar) {
+                    hint.textContent = 'Kurang ' + rupiah(bayar - uang) + ' dari jumlah bayar.';
+                    hint.classList.add('form-error');
+                    return;
+                }
+
+                hint.textContent = 'Kembalian ' + rupiah(uang - bayar) + '.';
+                hint.classList.remove('form-error');
+            }
+
+            metode.addEventListener('change', sesuaikan);
+            jumlah.addEventListener('input', hitungKembalian);
+            diterima.addEventListener('input', hitungKembalian);
+
+            sesuaikan();
+        })();
+    </script>
+@endpush

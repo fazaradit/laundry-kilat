@@ -9,8 +9,12 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Service;
 use App\Services\OrderService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -85,11 +89,101 @@ class OrderController extends Controller
             'customer',
             'user:id,name',
             'items.service',
+            'payments' => fn ($query) => $query->orderBy('tanggal_bayar')->orderBy('id'),
             'payments.user:id,name',
             'statusLogs.user:id,name',
         ]);
 
         return view('orders.show', compact('order'));
+    }
+
+    /**
+     * Struk memakai layout print terpisah (tanpa navbar) dan harga snapshot
+     * dari order_items.
+     */
+    public function struk(Order $order): View
+    {
+        $order->load([
+            'customer:id,nama',
+            'user:id,name',
+            'items.service:id,nama_layanan,satuan',
+            'payments' => fn ($query) => $query->orderBy('tanggal_bayar')->orderBy('id'),
+        ]);
+
+        return view('orders.struk', compact('order'));
+    }
+
+    /**
+     * Halaman laporan mengambil datanya dari GET /api/orders, bukan query
+     * langsung, supaya ada satu jalur data yang sama dengan konsumen API lain.
+     *
+     * Kalau server API internal mati, halaman tetap tampil dengan tabel kosong
+     * dan total nol, bukan error 500 (AC-19).
+     */
+    public function report(Request $request): View
+    {
+        $data = $request->validate([
+            'dari' => ['nullable', 'date_format:Y-m-d'],
+            'sampai' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:dari'],
+            'status' => ['nullable', 'string'],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $dari = $data['dari'] ?? Carbon::today()->toDateString();
+        $sampai = $data['sampai'] ?? Carbon::today()->toDateString();
+        $status = isset($data['status']) && OrderStatus::tryFrom($data['status']) !== null
+            ? $data['status']
+            : '';
+        $halaman = (int) ($data['page'] ?? 1);
+
+        $kosong = [
+            'data' => [],
+            'meta' => [
+                'current_page' => 1,
+                'last_page' => 1,
+                'total' => 0,
+                'per_page' => 15,
+                'total_nilai' => 0,
+                'total_dibayar' => 0,
+            ],
+        ];
+
+        try {
+            $response = Http::timeout(5)->get(config('services.internal_api.base_url').'/api/orders', array_filter([
+                'dari' => $dari,
+                'sampai' => $sampai,
+                'status' => $status,
+                'page' => $halaman,
+                'per_page' => 15,
+            ], static fn ($nilai) => $nilai !== '' && $nilai !== null));
+
+            $payload = $response->successful() ? (array) $response->json() : $kosong;
+        } catch (ConnectionException $e) {
+            $payload = $kosong;
+        }
+
+        $meta = array_merge($kosong['meta'], (array) ($payload['meta'] ?? []));
+        $baris = (array) ($payload['data'] ?? []);
+
+        // Hasil HTTP berupa array, jadi dibungkus paginator manual agar
+        // partial pagination yang sudah ada bisa dipakai ulang.
+        $pesanan = new LengthAwarePaginator(
+            $baris,
+            (int) $meta['total'],
+            (int) $meta['per_page'],
+            (int) $meta['current_page'],
+            ['path' => route('orders.report'), 'query' => $request->query()]
+        );
+
+        return view('orders.report', [
+            'pesanan' => $pesanan,
+            'dari' => $dari,
+            'sampai' => $sampai,
+            'status' => $status,
+            'statusOptions' => OrderStatus::cases(),
+            'totalNilai' => (int) $meta['total_nilai'],
+            'totalDibayar' => (int) $meta['total_dibayar'],
+        ]);
     }
 
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
