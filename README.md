@@ -97,9 +97,18 @@ Base URL: `http://127.0.0.1:8011/api`
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
+| GET | `/services` | Daftar layanan, bisa disaring `?status=aktif\|nonaktif` |
+| GET | `/orders` | Daftar pesanan dengan pagination, bisa disaring `?status=&dari=&sampai=&per_page=` |
+| GET | `/orders/{id}` | Detail satu pesanan beserta item |
 | GET | `/stats` | Ringkasan jumlah pesanan & pendapatan hari ini |
 
-Endpoint lain (`/services`, `/orders`, `/orders/{id}`) ditambahkan pada fase berikutnya.
+`dari` dan `sampai` memakai format `Y-m-d` dan sama-sama inklusif. Respons `/orders` menyertakan `meta.total_nilai` dan `meta.total_dibayar` yang merupakan agregat seluruh periode filter, bukan hanya halaman yang sedang tampil.
+
+Contoh:
+
+```bash
+curl "http://127.0.0.1:8011/api/orders?status=diproses&dari=2026-11-01&sampai=2026-11-30&per_page=5"
+```
 
 ---
 
@@ -109,16 +118,18 @@ Endpoint lain (`/services`, `/orders`, `/orders/{id}`) ditambahkan pada fase ber
 |---|---|---|
 | **W0** | Scaffold Laravel 12, konfigurasi DB & `.env` | ✅ |
 | **W1** | Migration, model, relasi, auth + middleware, CRUD layanan & pelanggan | ✅ |
-| **W2** | Transaksi pesanan multi-item, perhitungan total, `DB::transaction()` | ⏳ |
-| **W3** | Pembayaran, state machine status, REST API, Dashboard & Laporan | ⏳ |
-| **W4** | Seeder/Factory lengkap, `DEMO.md`, finalisasi | ⏳ |
+| **W2** | Transaksi pesanan multi-item, perhitungan total, state machine status, `DB::transaction()` | ✅ |
+| **W3** | Pembayaran bertahap + kembalian tunai, struk, REST API, Laporan | ✅ |
+| **W4** | `DEMO.md`, finalisasi, merge `dev` → `main` | ⏳ |
 
 ---
 
 ## Aturan Bisnis Utama
 
-1. Total pesanan **selalu dihitung server** dari item — input total dari client diabaikan.
+1. Total pesanan **selalu dihitung server** dari item; input total dari client diabaikan.
 2. `order_items.harga_satuan` adalah **snapshot** harga saat transaksi; mengubah harga master tidak mengubah struk lama.
 3. Status pelunasan (Belum Bayar / DP / Lunas) **diturunkan** dari `SUM(payments.jumlah_bayar)`, bukan kolom tersimpan.
-4. Status pesanan hanya boleh **maju**: `diterima → dicuci → disetrika → siap_diambil → diambil`.
-5. Pesanan yang sudah `diambil` tidak bisa diubah lagi.
+4. Status pesanan hanya boleh **maju satu tahap**: `diterima → diproses → selesai`.
+5. Pesanan yang sudah `selesai` atau `dibatalkan` tidak bisa diubah lagi.
+6. Pembatalan hanya boleh dilakukan Admin, dan hanya dari `diterima` atau `diproses`.
+7. `payments.jumlah_bayar` adalah nominal yang dialokasikan ke tagihan dan tidak pernah melebihi sisa. Untuk tunai, `payments.uang_diterima` mencatat uang fisik yang diserahkan, dan `kembalian` dihitung server dari selisih keduanya.

@@ -140,11 +140,18 @@ class OrderSeeder extends Seeder
             $jumlahBayar = $pembayaran === 'lunas' ? $total : (int) $pembayaran;
             $jumlahBayar = min($jumlahBayar, $total);
 
+            $tunai = $index % 3 !== 0;
+
+            // Tunai diserahkan dalam pecahan uang nyata, jadi sebagian baris
+            // demo punya kembalian bukan nol. Transfer tidak punya uang fisik.
+            $uangDiterima = $tunai ? (int) (ceil($jumlahBayar / 50000) * 50000) : null;
+
             $order->payments()->create([
                 'user_id' => $kasir->id,
-                'metode' => $index % 3 === 0 ? 'transfer' : 'tunai',
+                'metode' => $tunai ? 'tunai' : 'transfer',
                 'jumlah_bayar' => $jumlahBayar,
-                'kembalian' => 0,
+                'uang_diterima' => $uangDiterima,
+                'kembalian' => $tunai ? $uangDiterima - $jumlahBayar : 0,
                 'catatan' => $pembayaran === 'lunas' ? 'Pelunasan' : 'Uang muka',
                 'tanggal_bayar' => $masuk->copy()->addHours(1),
             ]);
