@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    /*
+    | Instance kedua `php artisan serve` khusus panggilan API internal dari
+    | DashboardController dan OrderController@report. Wajib beda port dari
+    | server utama, karena `php artisan serve` memproses satu request per waktu.
+    */
+    'internal_api' => [
+        'base_url' => env('INTERNAL_API_URL', 'http://127.0.0.1:8011'),
+    ],
+
 ];

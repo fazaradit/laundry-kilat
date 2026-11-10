@@ -1,66 +1,159 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laundry Kilat
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen operasional laundry berbasis **Laravel 12** — mencatat pesanan, melacak status pengerjaan, mencatat pembayaran bertahap (DP), dan menyajikan laporan harian.
 
-## About Laravel
+Dibangun sebagai projek UAS mata kuliah Pemrograman Framework.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tabel Database (7 tabel)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Tabel | Fungsi |
+|---|---|
+| `users` | Akun kasir & admin (yang login ke aplikasi) |
+| `customers` | Data pelanggan laundry |
+| `services` | Master layanan (cuci kering, setrika, dll.) |
+| `orders` | Header transaksi pesanan |
+| `order_items` | Detail layanan per pesanan (harga snapshot) |
+| `payments` | Pembayaran, boleh bertahap (DP + pelunasan) |
+| `order_status_logs` | Riwayat perpindahan status pesanan |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Kebutuhan Sistem
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| Software | Versi |
+|---|---|
+| PHP | >= 8.2 |
+| Composer | 2.x |
+| MySQL | 8.x |
+| Node.js & NPM | 20+ (opsional, untuk build asset) |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Cara Menjalankan
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 1. Clone & install dependency
 
-### Premium Partners
+```bash
+git clone <url-repo> laundry-kilat
+cd laundry-kilat
+composer install
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### 2. Siapkan file `.env`
 
-## Contributing
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 3. Buat database
 
-## Code of Conduct
+```bash
+mysql -u root -e "CREATE DATABASE laundry_kilat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Sesuaikan `DB_USERNAME` dan `DB_PASSWORD` di `.env` bila perlu.
 
-## Security Vulnerabilities
+### 4. Migrasi & isi data demo
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan migrate:fresh --seed
+```
 
-## License
+### 5. Jalankan **dua** server
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Dashboard dan halaman Laporan mengambil data lewat HTTP ke API internal aplikasi sendiri. Karena `php artisan serve` hanya memproses satu request dalam satu waktu, keduanya **wajib** dijalankan di port berbeda:
+
+```bash
+# Terminal 1 - trafik browser
+php artisan serve --port=8000
+
+# Terminal 2 - khusus panggilan API internal
+php artisan serve --port=8011
+```
+
+Buka `http://127.0.0.1:8000`.
+
+> Kalau hanya satu server yang jalan, Dashboard dan Laporan tetap tampil tetapi angkanya nol / tabel kosong (bukan error). Pastikan `INTERNAL_API_URL` di `.env` menunjuk ke port server kedua.
+
+Skenario demo langkah demi langkah, beserta angka yang seharusnya muncul di layar, ada di [`DEMO.md`](./DEMO.md).
+
+---
+
+## Akun Demo
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@laundry.test` | `password` |
+| Kasir | `kasir@laundry.test` | `password` |
+
+Perbedaan hak akses:
+
+| Kemampuan | Kasir | Admin |
+|---|---|---|
+| Dashboard, Pelanggan, Pesanan, Pembayaran, Struk, Laporan | bisa | bisa |
+| Ubah status `diterima → diproses → selesai` | bisa | bisa |
+| Kelola master layanan (tambah, ubah harga, hapus, nonaktifkan) | tidak bisa (403) | bisa |
+| Batalkan pesanan | tidak bisa (403) | bisa |
+
+---
+
+## Endpoint API
+
+Base URL: `http://127.0.0.1:8011/api`
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/services` | Daftar layanan, bisa disaring `?status=aktif\|nonaktif` |
+| GET | `/orders` | Daftar pesanan dengan pagination, bisa disaring `?status=&dari=&sampai=&per_page=` |
+| GET | `/orders/{id}` | Detail satu pesanan beserta item |
+| GET | `/stats` | Ringkasan jumlah pesanan & pendapatan hari ini |
+
+`dari` dan `sampai` memakai format `Y-m-d` dan sama-sama inklusif. Respons `/orders` menyertakan `meta.total_nilai` dan `meta.total_dibayar` yang merupakan agregat seluruh periode filter, bukan hanya halaman yang sedang tampil.
+
+Contoh:
+
+```bash
+curl "http://127.0.0.1:8011/api/orders?status=diproses&dari=2026-11-01&sampai=2026-11-30&per_page=5"
+```
+
+---
+
+## Struktur Pengerjaan
+
+| Fase | Cakupan | Status |
+|---|---|---|
+| **W0** | Scaffold Laravel 12, konfigurasi DB & `.env` | ✅ |
+| **W1** | Migration, model, relasi, auth + middleware, CRUD layanan & pelanggan | ✅ |
+| **W2** | Transaksi pesanan multi-item, perhitungan total, state machine status, `DB::transaction()` | ✅ |
+| **W3** | Pembayaran bertahap + kembalian tunai, struk, REST API, Laporan | ✅ |
+| **W4** | `DEMO.md`, finalisasi dokumentasi, merge `dev` → `main` | ✅ |
+
+### Pemetaan commit per fase
+
+| Fase | Commit |
+|---|---|
+| W0 | `67359e7` scaffold Laravel 12 dan konfigurasi awal |
+| W1 | `53535be` migration, model, relasi, auth, middleware, CRUD layanan & pelanggan |
+| W2 | `d9e69f4` pesanan multi item, ubah status, data demo |
+| W2 | `5ecb00c` ganti pemilih status dengan tombol satu langkah |
+| W2 | `2172876` sederhanakan alur status menjadi diterima, diproses, selesai |
+| W3 | `ebbf891` pembayaran bertahap dengan kembalian tunai |
+| W3 | `7ecd1a1` halaman struk dengan layout print terpisah |
+| W3 | `143f028` endpoint layanan dan pesanan dengan API Resource |
+| W3 | `4491138` laporan periode dari API internal |
+| W4 | lihat `git log --oneline main` |
+
+---
+
+## Aturan Bisnis Utama
+
+1. Total pesanan **selalu dihitung server** dari item; input total dari client diabaikan.
+2. `order_items.harga_satuan` adalah **snapshot** harga saat transaksi; mengubah harga master tidak mengubah struk lama.
+3. Status pelunasan (Belum Bayar / DP / Lunas) **diturunkan** dari `SUM(payments.jumlah_bayar)`, bukan kolom tersimpan.
+4. Status pesanan hanya boleh **maju satu tahap**: `diterima → diproses → selesai`.
+5. Pesanan yang sudah `selesai` atau `dibatalkan` tidak bisa diubah lagi.
+6. Pembatalan hanya boleh dilakukan Admin, dan hanya dari `diterima` atau `diproses`.
+7. `payments.jumlah_bayar` adalah nominal yang dialokasikan ke tagihan dan tidak pernah melebihi sisa. Untuk tunai, `payments.uang_diterima` mencatat uang fisik yang diserahkan, dan `kembalian` dihitung server dari selisih keduanya.
