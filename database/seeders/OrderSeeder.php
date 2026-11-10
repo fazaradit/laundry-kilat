@@ -14,8 +14,11 @@ use Illuminate\Support\Carbon;
  * Data demo pesanan.
  *
  * Aturan konsistensi yang dijaga (PRD 14, risiko "seeder order tidak konsisten"):
- * - Pesanan berstatus selesai SELALU lunas.
- * - Pesanan berstatus diterima sebagian besar belum bayar, satu berstatus DP.
+ * - Pesanan berstatus selesai umumnya lunas. Satu dibiarkan DP supaya terlihat
+ *   bahwa status pengerjaan dan status pelunasan adalah dua hal berbeda:
+ *   cucian sudah selesai, tetapi pelanggan belum melunasi sisanya.
+ * - Pesanan berstatus diterima sebagian besar belum bayar, satu berstatus DP
+ *   dan dibayar hari ini supaya Dashboard punya angka saat demo dibuka.
  * - Pesanan yang dibatalkan tidak punya pembayaran.
  */
 class OrderSeeder extends Seeder
@@ -39,13 +42,17 @@ class OrderSeeder extends Seeder
             [OrderStatus::Selesai, 5, ['Cuci Setrika' => 4], 0, 'lunas'],
             [OrderStatus::Selesai, 5, ['Cuci Sepatu' => 2], 0, 'lunas'],
             [OrderStatus::Selesai, 3, ['Cuci Kering' => 5], 0, 'lunas'],
+            // Selesai dikerjakan, tetapi baru dibayar sebagian. Dipakai saat demo
+            // untuk menjelaskan bahwa status pesanan dan status pelunasan terpisah.
             [OrderStatus::Selesai, 2, ['Bed Cover' => 1, 'Setrika' => 2], 0, 15000],
             [OrderStatus::Diproses, 2, ['Cuci Setrika' => 6], 5000, 20000],
             [OrderStatus::Diproses, 1, ['Cuci Kering' => 4, 'Setrika' => 4], 0, null],
             [OrderStatus::Diproses, 1, ['Cuci Kering' => 2.5], 0, null],
             [OrderStatus::Diproses, 1, ['Cuci Sepatu' => 1], 0, 10000],
             [OrderStatus::Diterima, 0, ['Cuci Setrika' => 3], 0, null],
-            [OrderStatus::Diterima, 0, ['Cuci Kering' => 2, 'Bed Cover' => 1], 3000, null],
+            // DP hari ini: satu-satunya sumber "pendapatan hari ini" di Dashboard
+            // saat data baru di-seed, supaya demo tidak dibuka dengan angka nol.
+            [OrderStatus::Diterima, 0, ['Cuci Kering' => 2, 'Bed Cover' => 1], 3000, 15000],
             [OrderStatus::Diterima, 0, ['Setrika' => 2], 0, null],
             [OrderStatus::Diterima, 0, ['Cuci Kering' => 1.5], 0, null],
             [OrderStatus::Dibatalkan, 4, ['Cuci Setrika' => 2], 0, null],
