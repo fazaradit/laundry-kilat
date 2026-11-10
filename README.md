@@ -78,6 +78,8 @@ Buka `http://127.0.0.1:8000`.
 
 > Kalau hanya satu server yang jalan, Dashboard dan Laporan tetap tampil tetapi angkanya nol / tabel kosong (bukan error). Pastikan `INTERNAL_API_URL` di `.env` menunjuk ke port server kedua.
 
+Skenario demo langkah demi langkah, beserta angka yang seharusnya muncul di layar, ada di [`DEMO.md`](./DEMO.md).
+
 ---
 
 ## Akun Demo
@@ -87,7 +89,14 @@ Buka `http://127.0.0.1:8000`.
 | Admin | `admin@laundry.test` | `password` |
 | Kasir | `kasir@laundry.test` | `password` |
 
-Perbedaan hak akses: menu **Layanan** hanya bisa dibuka Admin. Kasir yang mengakses langsung akan mendapat 403.
+Perbedaan hak akses:
+
+| Kemampuan | Kasir | Admin |
+|---|---|---|
+| Dashboard, Pelanggan, Pesanan, Pembayaran, Struk, Laporan | bisa | bisa |
+| Ubah status `diterima → diproses → selesai` | bisa | bisa |
+| Kelola master layanan (tambah, ubah harga, hapus, nonaktifkan) | tidak bisa (403) | bisa |
+| Batalkan pesanan | tidak bisa (403) | bisa |
 
 ---
 
@@ -120,7 +129,22 @@ curl "http://127.0.0.1:8011/api/orders?status=diproses&dari=2026-11-01&sampai=20
 | **W1** | Migration, model, relasi, auth + middleware, CRUD layanan & pelanggan | ✅ |
 | **W2** | Transaksi pesanan multi-item, perhitungan total, state machine status, `DB::transaction()` | ✅ |
 | **W3** | Pembayaran bertahap + kembalian tunai, struk, REST API, Laporan | ✅ |
-| **W4** | `DEMO.md`, finalisasi, merge `dev` → `main` | ⏳ |
+| **W4** | `DEMO.md`, finalisasi dokumentasi, merge `dev` → `main` | ✅ |
+
+### Pemetaan commit per fase
+
+| Fase | Commit |
+|---|---|
+| W0 | `67359e7` scaffold Laravel 12 dan konfigurasi awal |
+| W1 | `53535be` migration, model, relasi, auth, middleware, CRUD layanan & pelanggan |
+| W2 | `d9e69f4` pesanan multi item, ubah status, data demo |
+| W2 | `5ecb00c` ganti pemilih status dengan tombol satu langkah |
+| W2 | `2172876` sederhanakan alur status menjadi diterima, diproses, selesai |
+| W3 | `ebbf891` pembayaran bertahap dengan kembalian tunai |
+| W3 | `7ecd1a1` halaman struk dengan layout print terpisah |
+| W3 | `143f028` endpoint layanan dan pesanan dengan API Resource |
+| W3 | `4491138` laporan periode dari API internal |
+| W4 | lihat `git log --oneline main` |
 
 ---
 
