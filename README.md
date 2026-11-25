@@ -78,7 +78,7 @@ Buka `http://127.0.0.1:8000`.
 
 > Kalau hanya satu server yang jalan, Dashboard dan Laporan tetap tampil tetapi angkanya nol / tabel kosong (bukan error). Pastikan `INTERNAL_API_URL` di `.env` menunjuk ke port server kedua.
 
-Skenario demo langkah demi langkah, beserta angka yang seharusnya muncul di layar, ada di [`DEMO.md`](./DEMO.md). Dokumentasi REST API lengkap ada di [`API.md`](./API.md).
+Skenario demo langkah demi langkah, beserta angka yang seharusnya muncul di layar, ada di [`DEMO.md`](./DEMO.md). Dokumentasi REST API lengkap ada di [`API.md`](./API.md). Peta kegunaan setiap file ada di [`STRUKTUR.md`](./STRUKTUR.md).
 
 ---
 
